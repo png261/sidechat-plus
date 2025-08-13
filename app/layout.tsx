@@ -1,22 +1,15 @@
 import { Toaster } from 'sonner';
-import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 
 import './globals.css';
-
-export const metadata: Metadata = {
-    metadataBase: new URL('https://chat.vercel.ai'),
-    title: 'Next.js Chatbot Template',
-    description: 'Next.js chatbot template using the AI SDK.',
-};
 
 export const viewport = {
     maximumScale: 1,
 };
 
 const inter = Inter({
-    subsets: ['latin', 'vietnamese'], // hỗ trợ tiếng Việt
+    subsets: ['latin', 'vietnamese'],
     display: 'swap',
     variable: '--font-inter',
 });

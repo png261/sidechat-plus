@@ -35,7 +35,6 @@ import { after } from 'next/server';
 import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
-import type { VisibilityType } from '@/components/visibility-selector';
 
 export const maxDuration = 60;
 

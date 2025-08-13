@@ -1,22 +1,40 @@
-import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-// Use Blob instead of File since File is not available in Node.js environment
+const R2_ENDPOINT_URL = process.env.R2_ENDPOINT_URL!;
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!;
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
+const R2_REGION = process.env.R2_REGION || 'auto';
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME!;
+const S3_BASE_URL = process.env.S3_BASE_URL!;
+
+if (!R2_ENDPOINT_URL || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET_NAME || !S3_BASE_URL) {
+    throw new Error('Missing required R2/S3 environment variables.');
+}
+
+const s3Client = new S3Client({
+    region: R2_REGION,
+    endpoint: R2_ENDPOINT_URL,
+    credentials: {
+        accessKeyId: R2_ACCESS_KEY_ID,
+        secretAccessKey: R2_SECRET_ACCESS_KEY,
+    },
+});
+
 const FileSchema = z.object({
     file: z
         .instanceof(Blob)
         .refine((file) => file.size <= 5 * 1024 * 1024, {
             message: 'File size should be less than 5MB',
         })
-        // Update the file type based on the kind of files you want to accept
         .refine((file) => ['image/jpeg', 'image/png'].includes(file.type), {
             message: 'File type should be JPEG or PNG',
         }),
 });
 
 export async function POST(request: Request) {
-    if (request.body === null) {
+    if (!request.body) {
         return new Response('Request body is empty', { status: 400 });
     }
 
@@ -29,32 +47,33 @@ export async function POST(request: Request) {
         }
 
         const validatedFile = FileSchema.safeParse({ file });
-
         if (!validatedFile.success) {
-            const errorMessage = validatedFile.error.errors
-                .map((error) => error.message)
-                .join(', ');
-
+            const errorMessage = validatedFile.error.errors.map((e) => e.message).join(', ');
             return NextResponse.json({ error: errorMessage }, { status: 400 });
         }
 
-        // Get filename from formData since Blob doesn't have name property
         const filename = (formData.get('file') as File).name;
-        const fileBuffer = await file.arrayBuffer();
+        const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-        try {
-            const data = await put(`${filename}`, fileBuffer, {
-                access: 'public',
-            });
-
-            return NextResponse.json(data);
-        } catch (error) {
-            return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
-        }
-    } catch (error) {
-        return NextResponse.json(
-            { error: 'Failed to process request' },
-            { status: 500 },
+        await s3Client.send(
+            new PutObjectCommand({
+                Bucket: R2_BUCKET_NAME,
+                Key: filename,
+                Body: fileBuffer,
+                ContentType: file.type,
+            })
         );
+
+        const fileUrl = `${S3_BASE_URL.replace(/\/$/, '')}/${filename}`;
+
+        return NextResponse.json({
+            url: fileUrl,            
+            pathname: filename,     
+            contentType: file.type,
+        });
+    } catch (error) {
+        console.error('Upload error:', error);
+        return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
     }
 }
+
