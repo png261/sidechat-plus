@@ -3,30 +3,50 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 
-config({
-  path: '.env.local',
-});
+config({ path: '.env.local' });
 
-const runMigrate = async () => {
-  if (!process.env.POSTGRES_URL) {
-    throw new Error('POSTGRES_URL is not defined');
-  }
+const main = async () => {
+    if (!process.env.POSTGRES_URL) {
+        throw new Error('POSTGRES_URL is not defined');
+    }
 
-  const connection = postgres(process.env.POSTGRES_URL, { max: 1 });
-  const db = drizzle(connection);
+    const connection = postgres(process.env.POSTGRES_URL, { max: 1 });
+    const db = drizzle(connection);
 
-  console.log('⏳ Running migrations...');
+    // 1️⃣ Run migrations
+    console.log('⏳ Running migrations...');
+    const start = Date.now();
+    await migrate(db, { migrationsFolder: './lib/db/migrations' });
+    console.log('✅ Migrations completed in', Date.now() - start, 'ms');
 
-  const start = Date.now();
-  await migrate(db, { migrationsFolder: './lib/db/migrations' });
-  const end = Date.now();
+    // 2️⃣ Show all tables
+    const tables = await connection`
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        ORDER BY table_name;
+    `;
+    console.log('📋 Tables in database:');
+    tables.forEach(row => console.log(`- ${row.table_name}`));
 
-  console.log('✅ Migrations completed in', end - start, 'ms');
-  process.exit(0);
+    // 3️⃣ Add fake user
+    try {
+        await connection`
+        INSERT INTO "User" (id, email, password)
+        VALUES ('00000000-0000-0000-0000-000000000000', 'Test User', 'fake@example.com')
+        ON CONFLICT (id) DO NOTHING;
+        `;
+        console.log('✅ Fake user inserted successfully');
+    } catch (err) {
+        console.error('❌ Failed to insert fake user:', err);
+    }
+
+    await connection.end();
+    process.exit(0);
 };
 
-runMigrate().catch((err) => {
-  console.error('❌ Migration failed');
-  console.error(err);
-  process.exit(1);
+main().catch(err => {
+    console.error('❌ Script failed:', err);
+    process.exit(1);
 });
+
