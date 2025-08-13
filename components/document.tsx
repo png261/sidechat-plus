@@ -26,13 +26,11 @@ const getActionText = (
 interface DocumentToolResultProps {
   type: 'create' | 'update' | 'request-suggestions';
   result: { id: string; title: string; kind: ArtifactKind };
-  isReadonly: boolean;
 }
 
 function PureDocumentToolResult({
   type,
   result,
-  isReadonly,
 }: DocumentToolResultProps) {
   const { setArtifact } = useArtifact();
 
@@ -41,13 +39,6 @@ function PureDocumentToolResult({
       type="button"
       className="bg-background cursor-pointer border py-2 px-3 rounded-xl w-fit flex flex-row gap-3 items-start"
       onClick={(event) => {
-        if (isReadonly) {
-          toast.error(
-            'Viewing files in shared chats is currently not supported.',
-          );
-          return;
-        }
-
         const rect = event.currentTarget.getBoundingClientRect();
 
         const boundingBox = {
@@ -92,13 +83,11 @@ interface DocumentToolCallProps {
     | { title: string; kind: ArtifactKind } // for create
     | { id: string; description: string } // for update
     | { documentId: string }; // for request-suggestions
-  isReadonly: boolean;
 }
 
 function PureDocumentToolCall({
   type,
   args,
-  isReadonly,
 }: DocumentToolCallProps) {
   const { setArtifact } = useArtifact();
 
@@ -107,12 +96,6 @@ function PureDocumentToolCall({
       type="button"
       className="cursor pointer w-fit border py-2 px-3 rounded-xl flex flex-row items-start justify-between gap-3"
       onClick={(event) => {
-        if (isReadonly) {
-          toast.error(
-            'Viewing files in shared chats is currently not supported.',
-          );
-          return;
-        }
 
         const rect = event.currentTarget.getBoundingClientRect();
 

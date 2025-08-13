@@ -23,13 +23,11 @@ import { SpreadsheetEditor } from './sheet-editor';
 import { ImageEditor } from './image-editor';
 
 interface DocumentPreviewProps {
-  isReadonly: boolean;
   result?: any;
   args?: any;
 }
 
 export function DocumentPreview({
-  isReadonly,
   result,
   args,
 }: DocumentPreviewProps) {
@@ -64,7 +62,6 @@ export function DocumentPreview({
         <DocumentToolResult
           type="create"
           result={{ id: result.id, title: result.title, kind: result.kind }}
-          isReadonly={isReadonly}
         />
       );
     }
@@ -74,7 +71,6 @@ export function DocumentPreview({
         <DocumentToolCall
           type="create"
           args={{ title: args.title, kind: args.kind }}
-          isReadonly={isReadonly}
         />
       );
     }

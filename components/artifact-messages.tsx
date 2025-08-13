@@ -15,7 +15,6 @@ interface ArtifactMessagesProps {
   messages: ChatMessage[];
   setMessages: UseChatHelpers<ChatMessage>['setMessages'];
   regenerate: UseChatHelpers<ChatMessage>['regenerate'];
-  isReadonly: boolean;
   artifactStatus: UIArtifact['status'];
 }
 
@@ -26,7 +25,6 @@ function PureArtifactMessages({
   messages,
   setMessages,
   regenerate,
-  isReadonly,
 }: ArtifactMessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -57,7 +55,6 @@ function PureArtifactMessages({
           }
           setMessages={setMessages}
           regenerate={regenerate}
-          isReadonly={isReadonly}
           requiresScrollPadding={
             hasSentMessage && index === messages.length - 1
           }
